@@ -1,0 +1,48 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+---------------------------------------------------
+
+
+运行说明：
+1. 拷贝target/fast_cluster-0.0.1-SNAPSHOT.jar包到集群$HADOOP_HOME/share/hadoop/mapreduce 目录下面；
+
+2. 拷贝src/main/resource/data/flume.csv 到集群目录 /user/root/flume.csv;
+
+3. 修改src/main/java/fz/utils/HUtils.java 的getConf方法，修改yarn.resourcemanager.address和yarn.resourcemanager.scheduler.address的地址；
+
+4. 打开src/test/java/fz/fast_cluster/ClusterDataDriverTest.java 
+   1) 打开test_findCenter(input,dc,splitter,method); 的注释并注释掉test_clusterData(input,k,splitter);；
+   2）修改其中的input路径为实际路径；（如果数据有变，则需根据实际情况确定dc的值）
+   3）直接java运行，计算各个点的局部密度和最小大密度距离；
+   4）运行完成后可以在d:/decision_chart.png查看该决策图；
+   5）根据决策图人为确定聚类个数；
+  
+5. 打开src/test/java/fz/fast_cluster/ClusterDataDriverTest.java 
+   1) 注释掉test_findCenter(input,dc,splitter,method); 并打开注释掉的test_clusterData(input,k,splitter);；
+   2）修改其中的聚类个数K；
+   3）直接java运行，即可根据聚类中心进行分类；
+ 
+ 
+6. 修改src/test/java/fz/fast_cluster/HUtilsTest.java ；
+   1）修改路径localPath路径为本地存储各次循环确定聚类点的数据路径，修改iter_i（为聚类循环的次数）；
+   2）运行完成后可以在localPath查看各次循环的分类好的数据；
+
+
+ 
+7. 未实现部分：
+  1）在寻找点局部密度时，给定的阈值dc人为确定，可以考虑使用程序确定；
+  2）聚类个数人为确定，同样可以考虑程序确定；
+  3）在根据聚类中心进行分类的时候，距离使用各个聚类中心点的最小距离的一半作为起始阈值，接着每次循环递增10%，直到递增到各个聚类中心点最大距离的1/3，这个可以优化；
+ 
+   
