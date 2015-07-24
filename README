@@ -1,43 +1,36 @@
 
-
-
-
-
-
-
-
 ---------------------------------------------------
 
 
-运行说明：
-1. 拷贝target/fast_cluster-0.0.1-SNAPSHOT.jar包到集群$HADOOP_HOME/share/hadoop/mapreduce 目录下面；
+运行说明：(linux操作默认使用root用户)
+1. 拷贝Jfreechar的相关包：jfreechar-1.0.15.jar , jcommon-1.0.17.jar 到$HADOOP_HOME/share/hadoop/mapreduce
 
-2. 拷贝src/main/resource/data/flume.csv 到集群目录 /user/root/flume.csv;
+2. 拷贝 digit_recoginzation_train_small.csv 到hdfs的/user/root/digit.csv文件
+   hadoop fs -put /opt/digit_recoginzation_train_small.csv /user/root/digit.csv
 
-3. 修改src/main/java/fz/utils/HUtils.java 的getConf方法，修改yarn.resourcemanager.address和yarn.resourcemanager.scheduler.address的地址；
+3. 云平台MR任务 
 
-4. 打开src/test/java/fz/fast_cluster/ClusterDataDriverTest.java 
-   1) 打开test_findCenter(input,dc,splitter,method); 的注释并注释掉test_clusterData(input,k,splitter);；
-   2）修改其中的input路径为实际路径；（如果数据有变，则需根据实际情况确定dc的值）
-   3）直接java运行，计算各个点的局部密度和最小大密度距离；
-   4）运行完成后可以在d:/decision_chart.png查看该决策图；
-   5）根据决策图人为确定聚类个数；
-  
-5. 打开src/test/java/fz/fast_cluster/ClusterDataDriverTest.java 
-   1) 注释掉test_findCenter(input,dc,splitter,method); 并打开注释掉的test_clusterData(input,k,splitter);；
-   2）修改其中的聚类个数K；
-   3）直接java运行，即可根据聚类中心进行分类；
- 
- 
-6. 修改src/test/java/fz/fast_cluster/HUtilsTest.java ；
-   1）修改路径localPath路径为本地存储各次循环确定聚类点的数据路径，修改iter_i（为聚类循环的次数）；
-   2）运行完成后可以在localPath查看各次循环的分类好的数据；
+3.0 把src/main/java目录的源码export到 fast_cluster.jar文件
+
+3.1. 转换为序列化文件
+hadoop jar /opt/fast_cluster.jar fz.fast_cluster.ToSeqJob digit_train.csv seq_out ,
+输出有5975条记录
+3.2. 计算距离
+hadoop jar /opt/fast_cluster.jar fz.fast_cluster.CalDistanceJob seq_out cal_distance_out 
+输出有17847325条记录  17847325 = 5975*(5975-1)/2
+
+3.3. 根据距离求解阈值，并根据阈值画决策图
+hadoop jar /opt/fast_cluster.jar fz.fast_cluster.CalDiffDCFindVec cal_distance_out/part-r-00000 17847325 0.02 0.02 1 2 2 /opt/picandlog 500
+输出5570条记录
+
+3.4. 根据距离和密度阈值求得聚类中心并写入本地
+hadoop jar /opt/fast_cluster.jar fz.fast_cluster.FindWriteCenter /opt/picandlog/log_center_0.dat 500 1000 digit_train.csv center_out /opt/picandlog/center.dat
 
 
- 
-7. 未实现部分：
-  1）在寻找点局部密度时，给定的阈值dc人为确定，可以考虑使用程序确定；
-  2）聚类个数人为确定，同样可以考虑程序确定；
-  3）在根据聚类中心进行分类的时候，距离使用各个聚类中心点的最小距离的一半作为起始阈值，接着每次循环递增10%，直到递增到各个聚类中心点最大距离的1/3，这个可以优化；
- 
-   
+4. 根据聚类中心对每个数据进行分类
+   未完成！
+
+
+
+
+
